@@ -1,0 +1,100 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 6
+            },
+            "errorLimit": {
+                "record": 0,
+                "percentage": 0.02
+            }
+        },
+		"batchSetting": {
+			"names":["$r.jdbcUrl","$r.testId"],
+			"args":[
+				["root","jdbc:mysql://127.0.0.1:4000/test"],
+				["root","jdbc:mysql://127.0.0.1:3306/test2"]
+			],
+			"ts_batch_mins":3600,
+			"ts_interval_sec":30,
+			"jdbc":{
+				"batchArgs":"select uid, jdbc from datax_task where groupid='$ts_key' ",
+				 "querySql":"select ts_offset as ts_start, now() as ts_end from datax_task where groupid='$ts_key' limit 1",
+				 "updateSql":"update datax_task set ts_offset=$ts_value,ts_err='',end_time=now() where groupid='$ts_key' ",
+				 "updateErr":"update datax_task set ts_error=$ts_value,end_time=now() where groupid='$ts_key' ",
+				 "username": "user",
+				 "password": "---",
+				 "jdbcUrl": ["jdbc:mysql://127.0.0.1:3306/test?useSSL=false"
+			}
+		},
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "user",
+                        "password": "--",
+                        "connection": [{
+						   "querySql": ["select `id`,`storage_id` from datax_task a where a.ctime>'$ts_start'" ],
+						   "jdbcUrl": ["jdbc:mysql://127.0.0.1:3306/test?useSSL=false"]
+						}]
+					}
+                },
+                "writer": {
+                    "name": "mysqlwriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "user",
+                        "password": "--",
+                        "column": [
+										  "id",
+										  "storage_id"
+                        ],
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/test?useSSL=false",
+                                "table": [
+                                    "datax_task_writer"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+
+			{
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "user2",
+                        "password": "--",
+                        "connection": [{
+						   "querySql": ["select `id`,`storage_id` from datax_task2 a where a.ctime>'$ts_start'" ],
+						   "jdbcUrl": ["jdbc:mysql://127.0.0.1:3306/test?useSSL=false"]
+						}]
+					}
+                },
+                "writer": {
+                    "name": "mysqlwriter",
+                    "parameter": {
+                        "writeMode": "insert",
+                        "username": "user2",
+                        "password": "--",
+                        "column": [
+										  "id",
+										  "storage_id"
+                        ],
+                        "connection": [
+                            {
+                                "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/test2?useSSL=false",
+                                "table": [
+                                    "datax_task_writer2"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
