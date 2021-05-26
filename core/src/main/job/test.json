@@ -24,7 +24,7 @@
 				 "updateErr":"update datax_task set ts_error=$ts_value,end_time=now() where groupid='$ts_key' ",
 				 "username": "user",
 				 "password": "---",
-				 "jdbcUrl": ["jdbc:mysql://127.0.0.1:3306/test?useSSL=false"
+				 "jdbcUrl": "jdbc:mysql://127.0.0.1:3306/test?useSSL=false"
 			}
 		},
         "content": [
