@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.kafkawriter;
+package com.alibaba.datax.plugin.writer.jsonwriter;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -6,30 +6,19 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.fastjson.JSON;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.BiConsumer;
 
-/**
- "parameter":{
-     "server": "ip:9092", //Kafka的server地址。
-     "topicIndex":1, //动态替换topic的 %%
-     "topic": "t08-%%", //Kafka的topic。
-     "batchSize": 1024, //向kafka一次性写入的数据量。
-     "refreshSec": 5 //最迟5s刷到写入（批次不足时）
-     "keyIndex": 0, //多行合并
-     "parseArray": true, //多行按Key合并？
- },
- */
-public class KafkaWriter extends Writer {
+public class FileWriter extends Writer {
     public static class Job extends Writer.Job {
         private Configuration originalConfig = null;
 
@@ -54,7 +43,7 @@ public class KafkaWriter extends Writer {
     }
 
     public static class Task extends Writer.Task {
-        private static final Logger LOG = LoggerFactory.getLogger(Task.class);
+        private static final Logger LOG = LoggerFactory.getLogger(KafkaWriter.Task.class);
         private Configuration writerSliceConfig = null;
         private List<String> columns;
         private int IdFieldIndex = -1; //用于行合并的id列：tradeID
@@ -62,8 +51,9 @@ public class KafkaWriter extends Writer {
 
         private int batchSize = 1024;
         private JsonParser jsonParser = null;
-        private Producer<String, String> producer = null;
-        private String KAFKA_TOPIC=null;
+        int BUFFER_SIZE=1000000;//1MB
+        String TOPIC;
+        BufferedOutputStream producer=null;
 
         @Override
         public void init() {
@@ -72,23 +62,20 @@ public class KafkaWriter extends Writer {
             this.IdFieldIndex = writerSliceConfig.getInt("keyIndex",-1);
             this.TopicFieldIndex = writerSliceConfig.getInt("topicIndex",-1);
             this.batchSize = writerSliceConfig.getInt("batchSize",1024);
-            this.KAFKA_TOPIC = writerSliceConfig.getString("topic");
-
-            Properties props = new Properties();
-            props.put("bootstrap.servers", writerSliceConfig.getString("server"));//指定broker的地址清单
-            props.put("acks", "1");
-            props.put("retries", 1);//收到临时性错误时，重发消息的次数
-            props.put("retries.backoff.ms",500);//重试间隔
-            props.put("batch.size",10 * writerSliceConfig.getInt("batchSize",1638));//批次行数
-            props.put("linger.ms", 1000 * writerSliceConfig.getInt("refreshSec",2));//生产者在发送消息前等待秒
-            props.put("buffer.memory", 33554432);//设置生产者内缓存区域的大小，生产者用它缓冲要发送到服务器的消息
-            props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");//必须是一个实现org.apache.kafka.common.serialization.Serializer接口的类，将key序列化成字节数组。注意：key.serializer必须被设置，即使消息中没有指定key
-            props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");//value序列化成字节数组
-            this.producer = new KafkaProducer(props);
+            this.TOPIC = writerSliceConfig.getString("topic","output-json")+".txt";
 
             this.jsonParser = writerSliceConfig.getBool("parseArray",false)?
-                  new JsonArrayParser(this.IdFieldIndex,this.columns) :
-                  new JsonParser(this.IdFieldIndex,this.columns);
+                    new JsonArrayParser(this.IdFieldIndex,this.columns) :
+                    new JsonParser(this.IdFieldIndex,this.columns);
+
+            try {
+                producer = new BufferedOutputStream(
+                        new FileOutputStream(this.TOPIC)
+                        //new GZIPOutputStream(new FileOutputStream("es_data.json.gz"))
+                        ,BUFFER_SIZE);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
@@ -128,19 +115,23 @@ public class KafkaWriter extends Writer {
                 @Override
                 public void accept(Record record, Map<String, Object> row) {
                     row.put("_topic_",
-                        TopicFieldIndex > -1? //是否动态topic写入？
-                            KAFKA_TOPIC.replace("%%",
-                                record.getColumn(TopicFieldIndex).asString())
-                            : KAFKA_TOPIC);
+                            TopicFieldIndex > -1? //是否动态topic写入？
+                                    TOPIC.replace("%%",
+                                            record.getColumn(TopicFieldIndex).asString())
+                                    : TOPIC);
                 }
             });
 
-            for(Map<String,Object> row : batch){
-                producer.send(new ProducerRecord(
-                    row.get("_topic_").toString(),
-                    null, //round-robin依次写入所有分区
+            try {
+                for(Map<String,Object> row : batch){
+                    producer.write(
                         JSON.toJSONString(row)
-                    ));
+                            .getBytes("utf-8")
+                    );
+                    producer.write("\n".getBytes("utf-8"));
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
             writeBuffer.clear();//必须清空
@@ -149,7 +140,11 @@ public class KafkaWriter extends Writer {
         @Override
         public void destroy() {
             if(this.producer !=null){
-                this.producer.close();
+                try {
+                    this.producer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.kafkawriter;
+package com.alibaba.datax.plugin.writer.jsonwriter;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
@@ -57,7 +57,7 @@ public class JsonArrayParser extends JsonParser {
         Record[] array = records.toArray(new Record[0]);
         Map<String,List<Record>> groups = mergeGroupRecords(array);
         for(Record r : array){
-            if(r!=null) {//为null的记录具有多行分组， 启动到groups中
+            if(r!=null) {//为null的记录具有多行分组， 已移动到groups中
                 Map<String,Object> row = getNestedDoc(r);//单行记录转Map
 
                 callback.accept(r,row);

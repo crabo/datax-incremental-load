@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.kafkawriter;
+package com.alibaba.datax.plugin.writer.jsonwriter;
 
 public class Key {
     public final static String CONFIG =  "config";

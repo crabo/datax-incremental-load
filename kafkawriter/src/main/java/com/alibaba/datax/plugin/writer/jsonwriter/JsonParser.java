@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.kafkawriter;
+package com.alibaba.datax.plugin.writer.jsonwriter;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;

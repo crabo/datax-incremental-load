@@ -1,6 +1,6 @@
 {
     "name": "kafkawriter",
-    "class": "com.alibaba.datax.plugin.writer.kafkawriter.KafkaWriter",
+    "class": "com.alibaba.datax.plugin.writer.jsonwriter.KafkaWriter",
     "description": "",
     "developer": "Crabo Yang"
 }
