@@ -1,0 +1,15 @@
+{
+    "name": "kafkawriter",
+    "parameter": {
+          "topicIndex":1, //替换动态topic的 %%
+          "topic": "test-json-%%",
+          "batchSize": 1024,
+          "refreshSec": 5,
+          "keyIndex": 0, //多行合并
+          "parseArray": true, //多行按Key合并？
+          "column": [
+            "id","tradeNO","date1","code","name.first","name.last",
+            "email","address[city]","address[zip]","ext."
+          ]
+    }
+}

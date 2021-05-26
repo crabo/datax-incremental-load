@@ -1,0 +1,42 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 6
+            },
+            "errorLimit": {
+                "record": 0,
+                "percentage": 0.02
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "user",
+                        "password": "--",
+                        "connection": [{
+						   "querySql": ["SELECT 1 AS `id`, 91008746511 AS `NO`,NOW() AS `date1`,'user1' AS `code`,'cc' AS `name.first`,'Y' AS `name.last`,'user1@mail.com' AS `email`,\n'XiaMen' AS `address[city]`,'361010' AS `address[zip]`,'{\"R\":10,\"M\":100,\"F\":\"1000-01\"}' AS `ext.`\n\nUNION ALL\n\nSELECT 2 AS `id`, 21008746511 AS `NO`,NOW() AS `date1`,'user21' AS `code`,'cc2' AS `name.first`,'Y' AS `name.last`,'user21@mail.com' AS `email`,\n'XiaMen' AS `address[city]`,'361012' AS `address[zip]`,'{\"R\":12,\"M\":102,\"F\":\"1000-02\"}' AS `ext.`\n\nUNION ALL\n\nSELECT 2 AS `id`, 21008746512 AS `NO`,NOW() AS `date1`,'user2' AS `code`,'c2' AS `name.first`,'Y2' AS `name.last`,'user2@mail.com' AS `email`,\n'ShangHai' AS `address[city]`,'361010' AS `address[zip]`,'{\"R\":20,\"M\":200,\"F\":\"2000-01\"}' AS `ext.`" ],
+						   "jdbcUrl": ["jdbc:mysql://192.168.1.1:3306/test6?useSSL=false"]
+						}]
+					}
+                },
+                "writer": {
+                    "name": "kafkawriter",
+                    "parameter": {
+                        "keyIndex": 1,
+                        "topic": "test-json",
+                        "batchSize": 1024,
+                        "refreshSec": 5,
+                        "parseArray": true,
+                        "column": [
+                          "id","tradeNO","date1","code","name.first","name.last",
+                          "email","address[city]","address[zip]","ext."
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
