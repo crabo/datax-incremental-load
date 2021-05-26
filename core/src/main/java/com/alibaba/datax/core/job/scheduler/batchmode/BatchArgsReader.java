@@ -28,9 +28,11 @@ public class BatchArgsReader {
 
         batchNames = cfg.getList(BATCH_SETTING_PATH+"names");
         batchArgs = getBatchArgs(tsKey);
-        if(batchArgs.isEmpty()) throw new IllegalArgumentException("‘jdbc.batchArgs’批量参数为空，请检查配置！");
-        if(batchArgs.get(0).length!=batchNames.size())
-            throw new IllegalArgumentException("‘jdbc.batchArgs’替换参数名与参数个数不一致，请重新配置！");
+        if(cfg.get("job.batchSetting")!=null) {
+            if (batchArgs.isEmpty()) throw new IllegalArgumentException("‘jdbc.batchArgs’批量参数为空，请检查配置！");
+            if (batchArgs.get(0).length != batchNames.size())
+                throw new IllegalArgumentException("‘jdbc.batchArgs’替换参数名与参数个数不一致，请重新配置！");
+        }
     }
 
     public int getChannelNum(){

@@ -67,6 +67,7 @@ public class BatchJobContainer extends JobContainer {
             //3. 本批次执行完成，更新offset
             batchArgsReader.updateJobStatus(tsValues[1].toString(),null);
         }else{
+            super.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID,0);
             super.start();
         }
     }

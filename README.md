@@ -8,8 +8,13 @@ Improve alibaba/datax 3.0 for "continurous"  running in a incremental mode
 - [x] 增加时间戳“增量模式”，根据sql配置，在单个时间戳范围[ts_start,ts_end]内运行 以上所有多任务、多批次。 完成后更新**时间戳** ,适当休眠后继续读取sql时间戳循环运行。
 - [x] 实现进程不退出的准“实时增量读取” ,动态适时休眠后按新时间戳调度。
 
+#### 2. 新增强大的JSON处理，实现KafkaWriter、ElasticWriter、FileWriter
+在writer.parameter.column[...]设置列，根据列名可自动进行JSON合并：
+- [x] a.b , a.c  合并为  a: {b:.., c..}
+- [x] a.         合并为  a: { ..值反序列化..}
+- [x] a[b], a[c] 合并为  a: [{b:..,c..}, {b:.., c..}] ，支持多行合并。非数组属性从首行提取。
 
-#### 2. 新增job.batchSetting配置项
+#### 3. 新增job.batchSetting配置项
 ```json5
 {"job":
     {
@@ -42,7 +47,7 @@ Improve alibaba/datax 3.0 for "continurous"  running in a incremental mode
      }
  }
 ```
-#### 3. 编译与运行  
+#### 4. 编译与运行  
 1）. 合并当前代码到datax core模块 （仅新增）  
 2）. 修改com.alibaba.datax.core.job.JobContainer 为 protected initStandaloneScheduler()， 从而允许BatchJobContainer的子类重载。  
 3）. 修改com.alibaba.datax.core.Engine 59行的container = new BatchJobContainer(allConf); 将JobContainer实例替换为BatchJobContainer。  
